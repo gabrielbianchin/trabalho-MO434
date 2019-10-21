@@ -1,6 +1,3 @@
-import sys
-sys.path.insert(0,'/home/gustavu92/Desktop/unicamp/tools/')
-
 import argparse
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader

@@ -127,3 +127,6 @@ dmypy.json
 # Bisenet trash
 bisenet/runs/
 bisenet/checkpoints/
+
+# Models weights
+*h5
