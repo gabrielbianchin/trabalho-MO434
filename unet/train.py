@@ -4,7 +4,7 @@ import multiprocessing
 from sklearn.model_selection import train_test_split
 import cv2
 import matplotlib.pyplot as plt
-import pandas
+import pandas as pd
 from keras.backend.tensorflow_backend import set_session
 import tensorflow as tf
 import keras.backend as K
@@ -16,7 +16,6 @@ from keras.models import load_model
 import natsort
 import pickle
 from evaluation import define_metrics
-from evaluation import filter_path
 
 from model import unet
 from data_generator import DataGenerator
@@ -34,29 +33,20 @@ def main():
         metrics_dict[metric.__name__] = metric
 
     model = unet()
-    model.compile(optimizer = Adam(lr = 1e-5),
+    model.compile(optimizer = Adam(lr = 1e-4),
               loss = 'binary_crossentropy',
               metrics = metrics_list)
 
 
-    images_path = glob.glob('/mnt/1058CF1419A58A26/Bonn2016/*/images/rgb/*.png')
-    annotations_path = glob.glob('/mnt/1058CF1419A58A26/Bonn2016/*/annotations/dlp/colorCleaned/*.png')
+    X_train = pd.read_pickle("../data/X_train.pkl")
+    X_val = pd.read_pickle("../data/X_val.pkl")
+    y_train = pd.read_pickle("../data/y_train.pkl")
+    y_val = pd.read_pickle("../data/y_val.pkl")
 
-    images_path = natsort.natsorted(images_path)
-    annotations_path = natsort.natsorted(annotations_path)
+    training_generator = DataGenerator(X_train, y_train, dataset_path='/mnt/1058CF1419A58A26/Bonn2016/', load_memory=False, preprocessing = 'div', aug_flag=False, batch_size=4)
+    validation_generator = DataGenerator(X_val, y_val, dataset_path='/mnt/1058CF1419A58A26/Bonn2016/', load_memory=False, preprocessing = 'div',  aug_flag=False, batch_size=4)
 
-    images_path, annotations_path = filter_path(images_path, annotations_path)
-
-    images_path = pandas.DataFrame(images_path, columns=['path'])
-    annotations_path = pandas.DataFrame(annotations_path, columns=['path'])
-
-    X_train, X_test, y_train, y_test = train_test_split(images_path, annotations_path, test_size=0.3, random_state=1)
-    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.3, random_state=1)
-
-    training_generator = DataGenerator(X_train, y_train, load_memory=False, preprocessing = 'norm', aug_flag=False, batch_size=4)
-    validation_generator = DataGenerator(X_val, y_val, load_memory=True, preprocessing = 'norm',  aug_flag=False, batch_size=4)
-
-    es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=10)
+    es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=5)
     mc = ModelCheckpoint('best_model.h5', monitor='val_loss', mode='min', verbose=1, save_best_only=True)
     hist = History()
 

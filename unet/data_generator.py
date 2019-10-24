@@ -6,12 +6,13 @@ from imgaug import augmenters as iaa
 
 class DataGenerator(keras.utils.Sequence):
     'Generates data for Keras'
-    def __init__(self, df_img, df_mask, load_memory=False, preprocessing = 'div', aug_flag=False, batch_size=4, dim=(384, 512), n_channels=3, shuffle=True):
+    def __init__(self, df_img, df_mask, dataset_path, load_memory=False, preprocessing = 'div', aug_flag=False, batch_size=4, dim=(384, 512), n_channels=3, shuffle=True):
         'Initialization'
         self.dim = dim
         self.n_channels = n_channels
         self.df_img = df_img
         self.df_mask = df_mask
+        self.dataset_path = dataset_path
         self.preprocessing = preprocessing
         self.mean = [31.74609085, 42.01666982, 48.74235915]
         self.std = [9.77630045, 13.52184419, 16.22450647]
@@ -46,8 +47,8 @@ class DataGenerator(keras.utils.Sequence):
             
     def load_listID(self):
         for i, ID in enumerate(self.list_IDs):
-            self.imgs[i] = load_img(self.df_img.loc[ID]['path'], target_size=self.dim)
-            self.masks[i] = load_img(self.df_mask.loc[ID]['path'], target_size=self.dim)
+            self.imgs[i] = load_img(self.dataset_path + self.df_img.loc[ID]['path'], target_size=self.dim)
+            self.masks[i] = load_img(self.dataset_path + self.df_mask.loc[ID]['path'], target_size=self.dim)
             
     def __len__(self):
         'Denotes the number of batches per epoch'
@@ -80,8 +81,8 @@ class DataGenerator(keras.utils.Sequence):
             self.X = np.empty((self.batch_size, *self.dim, self.n_channels), dtype=np.float16)
             self.y = np.empty((self.batch_size, *self.dim, self.n_channels), dtype=np.uint8)
             for i, ID in enumerate(list_IDs_temp):
-                self.X[i] = load_img(self.df_img.loc[ID]['path'], target_size=self.dim)
-                self.y[i] = load_img(self.df_mask.loc[ID]['path'], target_size=self.dim)
+                self.X[i] = load_img(self.dataset_path + self.df_img.loc[ID]['path'], target_size=self.dim)
+                self.y[i] = load_img(self.dataset_path + self.df_mask.loc[ID]['path'], target_size=self.dim)
         if self.aug_flag == True:
             for i in range(len(self.X)):
                 self.X[i], self.y[i] = self.augmentation(image=self.X[i], segmentation_maps=self.y[i])
