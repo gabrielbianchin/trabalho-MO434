@@ -12,9 +12,8 @@ import pandas as pd
 
 
 class BonnDataset(BaseDataSet):
-    def __init__(self, mode='fine', **kwargs):
+    def __init__(self, **kwargs):
         self.num_classes = 3
-        self.mode = mode
         self.palette = palette.CityScpates_palette
         print(kwargs)
         super(BonnDataset, self).__init__(**kwargs)
@@ -29,27 +28,27 @@ class BonnDataset(BaseDataSet):
     def _load_data(self, index):
         image_path, label_path = self.files[index]
         image_id = self.ids[index]
-        image = cv2.cvtColor(cv2.imread(image_path), cv2.COLOR_BGR2RGB)
-        mask = cv2.imread(label_path)
+        image = np.asarray(Image.open(image_path).convert('RGB'), dtype=np.float32)
+        mask = np.asarray(Image.open(label_path), dtype=np.int32)
 
         # if self.transform:
         #     augmented = self.transform(image=image, mask=mask)
         #     image = augmented['image']
         #     original_mask = augmented['mask']
             
-        label = np.zeros_like(mask[..., 0])
+        label = np.zeros_like(mask[..., 0], dtype=np.int32)
         label[mask[..., 1] == 255] = 1
-        label[mask[..., 2] == 255] = 2
+        label[mask[..., 0] == 255] = 2
         
         return image, label, image_id
 
 
 class Bonn2016(BaseDataLoader):
-    def __init__(self, data_dir, batch_size, split, crop_size=None, base_size=None, scale=True, num_workers=1, mode='fine', val=False,
-                    shuffle=False, flip=False, rotate=False, blur= False, augment=False, val_split= None, return_id=False):
+    def __init__(self, data_dir, batch_size, split, crop_size=None, base_size=None, scale=True, num_workers=1, shuffle=False,
+                    flip=False, rotate=False, blur= False, augment=False, val_split= None, return_id=False, val=False):
 
-        self.MEAN = [0.28689529, 0.32513294, 0.28389176]
-        self.STD = [0.17613647, 0.18099176, 0.17772235]
+        self.MEAN = [0.5, 0.5, 0.5]
+        self.STD = [0.5, 0.5, 0.5]
 
         kwargs = {
             'root': data_dir,
@@ -67,5 +66,5 @@ class Bonn2016(BaseDataLoader):
             'val': val
         }
 
-        self.dataset = BonnDataset(mode=mode, **kwargs)
+        self.dataset = BonnDataset(**kwargs)
         super(Bonn2016, self).__init__(self.dataset, batch_size, shuffle, num_workers, val_split)

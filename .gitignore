@@ -124,9 +124,10 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Bisenet trash
+# Models trash
 bisenet/runs/
 bisenet/checkpoints/
+pytorch_segmentation/saved/
 
 # Models weights
 *h5

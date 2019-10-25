@@ -108,10 +108,10 @@ class BaseDataSet(Dataset):
                 image_new = image_new[start_h:end_h, start_w:end_w]
                 label_new = label_new[start_h:end_h, start_w:end_w]
 
-            if label_new.sum() != 0:
-                image = image_new
-                label = label_new
-                break
+            # if label_new.sum() != 0:
+            #     image = image_new
+            #     label = label_new
+            break
 
         # Random H flip
         if self.flip:
@@ -142,6 +142,7 @@ class BaseDataSet(Dataset):
         if self.return_id:
             return  self.normalize(self.to_tensor(image)), label, image_id
         return self.normalize(self.to_tensor(image)), label
+
 
     def __repr__(self):
         fmt_str = "Dataset: " + self.__class__.__name__ + "\n"
