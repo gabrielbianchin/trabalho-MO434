@@ -125,7 +125,8 @@ def main():
     if not os.path.exists('outputs'):
         os.makedirs('outputs')
 
-    image_files = sorted(glob(os.path.join(args.images, f'*.{args.extension}')))
+    #image_files = sorted(glob(os.path.join(args.images, f'*.{args.extension}')))
+    image_files = list(pd.read_pickle(args.images)['path'])
     with torch.no_grad():
         tbar = tqdm(image_files, ncols=100)
         for img_file in tbar:
