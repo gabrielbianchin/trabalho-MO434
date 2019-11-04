@@ -15,6 +15,8 @@ from PIL import Image
 import dataloaders
 import models
 from utils.helpers import colorize_mask
+import pandas as pd
+import cv2
 
 def pad_image(img, target_size):
     rows_to_pad = max(target_size[0] - img.shape[2], 0)
@@ -97,7 +99,7 @@ def main():
 
     # Dataset used for training the model
     dataset_type = config['train_loader']['type']
-    assert dataset_type in ['VOC', 'COCO', 'CityScapes', 'ADE20K']
+    assert dataset_type in ['VOC', 'COCO', 'CityScapes', 'ADE20K', 'Bonn2016']
     if dataset_type == 'CityScapes': 
         scales = [0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25] 
     else:
@@ -131,6 +133,11 @@ def main():
         tbar = tqdm(image_files, ncols=100)
         for img_file in tbar:
             image = Image.open(img_file).convert('RGB')
+            
+            if args.mode == 'rescale':
+                image = cv2.resize(np.array(image), (512, 384), interpolation=cv2.INTER_LINEAR)
+                image = Image.fromarray(image, 'RGB')
+                
             input = normalize(to_tensor(image)).unsqueeze(0)
             
             if args.mode == 'multiscale':
