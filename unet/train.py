@@ -38,9 +38,9 @@ def main():
               metrics = metrics_list)
 
 
-    X_train = pd.read_pickle("../data/X_train.pkl")
+    X_train = pd.read_pickle("../data/X_train.pkl").iloc[:3000]
     X_val = pd.read_pickle("../data/X_val.pkl")
-    y_train = pd.read_pickle("../data/y_train.pkl")
+    y_train = pd.read_pickle("../data/y_train.pkl").iloc[:3000]
     y_val = pd.read_pickle("../data/y_val.pkl")
 
     training_generator = DataGenerator(X_train, y_train, dataset_path='/mnt/1058CF1419A58A26/Bonn2016/', load_memory=False, preprocessing = 'div', aug_flag=False, batch_size=4)

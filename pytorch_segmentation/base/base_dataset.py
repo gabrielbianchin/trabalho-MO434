@@ -8,7 +8,7 @@ from torchvision import transforms
 from scipy import ndimage
 
 class BaseDataSet(Dataset):
-    def __init__(self, root, split, mean, std, base_size=None, augment=True, val=False,
+    def __init__(self, root, split, mean, std, base_size=None, height_size=None, augment=True, val=False,
                 crop_size=321, scale=True, flip=True, rotate=False, blur=False, return_id=False):
         self.root = root
         self.split = split
@@ -18,6 +18,7 @@ class BaseDataSet(Dataset):
         self.crop_size = crop_size
         if self.augment:
             self.base_size = base_size
+            self.height_size = height_size
             self.scale = scale
             self.flip = flip
             self.rotate = rotate
@@ -58,6 +59,17 @@ class BaseDataSet(Dataset):
             end_w = start_w + self.crop_size
             image = image[start_h:end_h, start_w:end_w]
             label = label[start_h:end_h, start_w:end_w]
+            
+        if self.base_size:
+            h, w, _ = image.shape
+            if self.scale:
+                longside = random.randint(int(self.base_size*0.5), int(self.base_size*2.0))
+            else:
+                longside = self.base_size
+            h, w = (longside, int(1.0 * longside * w / h + 0.5)) if h > w else (int(1.0 * longside * h / w + 0.5), longside)
+            image = cv2.resize(image, (w, h), interpolation=cv2.INTER_LINEAR)
+            label = cv2.resize(label, (w, h), interpolation=cv2.INTER_NEAREST)
+            
         return image, label
 
 

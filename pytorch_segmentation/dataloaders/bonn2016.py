@@ -19,9 +19,9 @@ class BonnDataset(BaseDataSet):
         super(BonnDataset, self).__init__(**kwargs)
 
     def _set_files(self):
-        assert (self.split in ['train', 'val'])
-        image_paths = pd.read_pickle(self.root + '/X_' + self.split + '.pkl')['path']
-        label_paths = pd.read_pickle(self.root + '/y_' + self.split + '.pkl')['path']
+        assert (self.split in ['train', 'val', 'test'])
+        image_paths = pd.read_pickle(self.root + '/X_' + self.split + '_full.pkl')['path']
+        label_paths = pd.read_pickle(self.root + '/y_' + self.split + '_full.pkl')['path']
         self.files = list(zip(image_paths, label_paths))
         self.ids = image_paths.index
 

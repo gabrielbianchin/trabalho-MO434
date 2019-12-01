@@ -4,6 +4,9 @@ import torch.nn as nn
 import numpy as np
 import math
 import PIL
+from torchvision import transforms
+import matplotlib.pyplot as plt
+
 
 def dir_exists(path):
     if not os.path.exists(path):
@@ -55,3 +58,27 @@ def apply_leaf(m, f):
 
 def set_trainable(l, b):
     apply_leaf(l, lambda m: set_trainable_attr(m,b))
+    
+def plot_inference(model, dataloader, batches=1):
+    invTrans = transforms.Compose([transforms.Normalize(mean = [0., 0., 0.],
+                                                        std = [1/0.5, 1/0.5, 1/0.5]),
+                                   transforms.Normalize(mean = [-0.5, -0.5, -0.5], 
+                                                        std = [1., 1., 1.]),])
+    with torch.no_grad():
+        for i, (X, y) in enumerate(dataloader):
+            X = X.cuda(non_blocking=True)
+            y = y.cuda(non_blocking=True)
+
+            y_pred = model(X)
+
+            for j in range(len(X)):
+                f, ax = plt.subplots(1,3)
+                f.set_figheight(15)
+                f.set_figwidth(15)
+                ax[0].imshow(invTrans(X[j]).permute(1, 2, 0).cpu().numpy())
+                ax[1].imshow(y.permute(0, 1, 2).cpu().numpy()[j], vmin=0, vmax=2)
+                ax[2].imshow(np.argmax(y_pred.permute(0, 2, 3, 1).cpu().numpy(), -1)[j], vmin=0, vmax=2)
+                plt.show()
+
+            if i == batches:
+                break

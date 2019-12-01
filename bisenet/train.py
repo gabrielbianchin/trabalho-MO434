@@ -13,6 +13,8 @@ from utils import reverse_one_hot, compute_global_accuracy, fast_hist, \
     per_class_iu
 from loss import DiceLoss
 from data_loader import SegDataset
+import albumentations as A
+import pandas as pd
 
 
 def val(args, model, dataloader):
@@ -49,16 +51,17 @@ def val(args, model, dataloader):
             precision_record.append(precision)
         precision = np.mean(precision_record)
         # miou = np.mean(per_class_iu(hist))
-        miou_list = per_class_iu(hist)[:-1]
+        miou_list = per_class_iu(hist)
         # miou_dict, miou = cal_miou(miou_list, csv_path)
-        miou = np.mean(miou_list)
+        miou = np.mean(np.square(miou_list))
+        print(miou_list)
         print('precision per pixel for test: %.3f' % precision)
         print('mIoU for validation: %.3f' % miou)
-        # miou_str = ''
-        # for key in miou_dict:
-        #     miou_str += '{}:{},\n'.format(key, miou_dict[key])
-        # print('mIoU for each class:')
-        # print(miou_str)
+#         miou_str = ''
+#         for key in miou_dict:
+#             miou_str += '{}:{},\n'.format(key, miou_dict[key])
+#         print('mIoU for each class:')
+#         print(miou_str)
         return precision, miou
 
 
@@ -107,12 +110,20 @@ def train(args, model, optimizer, dataloader_train, dataloader_val):
 
         if epoch % args.validation_step == 0:
             precision, miou = val(args, model, dataloader_val)
+            writer.add_scalar('epoch/precision_val', precision, epoch)
+            writer.add_scalar('epoch/miou val', miou, epoch)
+            early_stop = 5
             if miou > max_miou:
                 max_miou = miou
                 torch.save(model.module.state_dict(),
                            os.path.join(args.save_model_path, 'best_model.pth'))
-            writer.add_scalar('epoch/precision_val', precision, epoch)
-            writer.add_scalar('epoch/miou val', miou, epoch)
+                patience = 0
+            else:
+                patience += 1
+                if patience == early_stop:
+                    print('early stop')
+                    return
+
 
 
 def main(params, viz):
@@ -153,10 +164,10 @@ def main(params, viz):
         # A.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.1, rotate_limit=15, p=0.5)
     ])
 
-    X_train = pd.read_pickle('/home/gustavu92/Desktop/unicamp/data/bonn/X_train.pkl')
-    X_val = pd.read_pickle('/home/gustavu92/Desktop/unicamp/data/bonn/X_val.pkl')
-    y_train = pd.read_pickle('/home/gustavu92/Desktop/unicamp/data/bonn/y_train.pkl')
-    y_val = pd.read_pickle('/home/gustavu92/Desktop/unicamp/data/bonn/y_val.pkl')
+    X_train = pd.read_pickle('../data/X_train_full.pkl')
+    X_val = pd.read_pickle('../data/X_val_full.pkl')
+    y_train = pd.read_pickle('../data/y_train_full.pkl')
+    y_val = pd.read_pickle('../data/y_val_full.pkl')
 
     shape = (args.crop_width, args.crop_height)
 
@@ -233,11 +244,12 @@ if __name__ == '__main__':
     try:
         viz = Visdom(port=FLAGS.port, server=FLAGS.server, base_url=FLAGS.base_url, username=FLAGS.username, password=FLAGS.password, use_incoming_socket=FLAGS.use_incoming_socket)
     except Exception as e:
+        viz = None
         print("Visdom not initialized")
         
     params = [
-        '--num_epochs', '1000',
-        '--learning_rate', '2.5e-3',
+        '--num_epochs', '100',
+        '--learning_rate', '1e-4',
         '--num_workers', '6',
         '--num_classes', '3',
         '--cuda', '0',

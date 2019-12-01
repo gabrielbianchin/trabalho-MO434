@@ -7,6 +7,9 @@ import pandas as pd
 import random
 import numbers
 import torchvision
+import time
+from torchvision import transforms
+import matplotlib.pyplot as plt
 
 def poly_lr_scheduler(optimizer, init_lr, iter, lr_decay_iter=1,
                       max_iter=300, power=0.9):
@@ -293,3 +296,78 @@ def group_weight(weight_group, module, norm_layer, lr):
 	weight_group.append(dict(params=group_decay, lr=lr))
 	weight_group.append(dict(params=group_no_decay, weight_decay=.0, lr=lr))
 	return weight_group
+
+def metrics(y_true, y_pred, channel=None):
+    epsilon = 1e-6
+    pred = torch.argmax(y_pred, 1)
+    pred = (pred==channel).byte()
+    pred_inv = (~pred)
+    gt = (y_true == channel).byte()
+    gt_inv = (~gt)
+    tp = (pred & gt).sum().float()
+    tn = (pred_inv & gt_inv).sum().float()
+    fp = (pred & gt_inv).sum().float()
+    fn = (pred_inv & gt).sum().float()
+    accuracy  = (tp + tn)/(tp + tn + fp + fn + epsilon)
+    precision  = tp/(tp + fp + epsilon)
+    recall = tp/(tp + fn + epsilon)
+    f1 = 2*(precision*recall)/(precision + recall + epsilon)
+    return torch.Tensor([accuracy, precision, recall, f1])
+
+def evaluate_dataloader(model, dataloader):
+    metrics_accumulated_soil = torch.zeros((4)).float()
+    metrics_accumulated_crop = torch.zeros((4)).float()
+    metrics_accumulated_weed = torch.zeros((4)).float()
+    start = time.time()
+
+    with torch.no_grad():
+        for i, (X, y) in enumerate(dataloader):
+            X = X.cuda(non_blocking=True)
+            y = y.cuda(non_blocking=True)
+
+            y_pred = model(X)
+            metrics_accumulated_soil += metrics(y, y_pred, 0)
+            metrics_accumulated_crop += metrics(y, y_pred, 1)
+            metrics_accumulated_weed += metrics(y, y_pred, 2)
+
+    end = time.time()
+    metrics_mean_soil = metrics_accumulated_soil/len(dataloader)
+    metrics_mean_crop = metrics_accumulated_crop/len(dataloader)
+    metrics_mean_weed = metrics_accumulated_weed/len(dataloader)
+
+    fps = len(dataloader.dataset)/(end - start)
+    print("(Soil) Accuracy: %.3f, Precision: %.3f, Recall: %.3f, F1: %.3f"%(metrics_mean_soil[0],
+                                                                            metrics_mean_soil[1],
+                                                                            metrics_mean_soil[2],
+                                                                            metrics_mean_soil[3]))
+    
+    print("(Crop) Accuracy: %.3f, Precision: %.3f, Recall: %.3f, F1: %.3f"%(metrics_mean_crop[0],
+                                                                            metrics_mean_crop[1],
+                                                                            metrics_mean_crop[2],
+                                                                            metrics_mean_crop[3]))
+    
+    print("(Weed) Accuracy: %.3f, Precision: %.3f, Recall: %.3f, F1: %.3f"%(metrics_mean_weed[0],
+                                                                            metrics_mean_weed[1],
+                                                                            metrics_mean_weed[2],
+                                                                            metrics_mean_weed[3]))
+    print("FPS: %i"%fps)
+    
+def plot_inference(model, dataloader, batches=1):
+    with torch.no_grad():
+        for i, (X, y) in enumerate(dataloader):
+            X = X.cuda(non_blocking=True)
+            y = y.cuda(non_blocking=True)
+
+            y_pred = model(X)
+
+            for j in range(len(X)):
+                f, ax = plt.subplots(1,3)
+                f.set_figheight(15)
+                f.set_figwidth(15)
+                ax[0].imshow(X[j].permute(1, 2, 0).cpu().numpy())
+                ax[1].imshow(y.permute(0, 1, 2).cpu().numpy()[j], vmin=0, vmax=2)
+                ax[2].imshow(np.argmax(y_pred.permute(0, 2, 3, 1).cpu().numpy(), -1)[j], vmin=0, vmax=2)
+                plt.show()
+
+            if i == batches:
+                break

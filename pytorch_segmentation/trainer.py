@@ -188,7 +188,7 @@ class Trainer(BaseTrainer):
         IoU = 1.0 * self.total_inter / (np.spacing(1) + self.total_union)
         mIoU = IoU.mean()
         return {
-            "Pixel_Accuracy": np.round(pixAcc, 3),
-            "Mean_IoU": np.round(mIoU, 3),
-            "Class_IoU": dict(zip(range(self.num_classes), np.round(IoU, 3)))
+            self.wrt_mode + "_Pixel_Accuracy": np.round(pixAcc, 3),
+            self.wrt_mode + "_Mean_IoU": np.round(mIoU, 3),
+            self.wrt_mode + "_Class_IoU": dict(zip(range(self.num_classes), np.round(IoU, 3)))
         }

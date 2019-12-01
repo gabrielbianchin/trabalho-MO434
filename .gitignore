@@ -131,3 +131,5 @@ pytorch_segmentation/saved/
 
 # Models weights
 *h5
+*.pkl
+*.pth
