@@ -17,7 +17,7 @@
         "type": "Bonn2016",
         "args":{
             "data_dir": "/home/gustavu92/Desktop/trabalho-MO434/data/",
-            "batch_size": 4,
+            "batch_size": 2,
             "base_size": 512,
             "augment": true,
             "shuffle": false,
@@ -34,7 +34,7 @@
         "type": "Bonn2016",
         "args":{
             "data_dir": "/home/gustavu92/Desktop/trabalho-MO434/data/",
-            "batch_size": 4,
+            "batch_size": 2,
             "base_size": 512,
             "augment": true,
             "shuffle": false,
@@ -52,7 +52,7 @@
         "type": "Bonn2016",
         "args":{
             "data_dir": "/home/gustavu92/Desktop/trabalho-MO434/data/",
-            "batch_size": 4,
+            "batch_size": 2,
             "base_size": 512,
             "augment": true,
             "shuffle": false,
